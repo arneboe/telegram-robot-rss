@@ -57,10 +57,6 @@ class RobotRss(object):
 
         # Add new User if not exists
         if not self.db.get_user(telegram_id=telegram_user.id):
-
-            message = "Hello! I don't think we've met before! I am an RSS News Bot and would like to help you to receive your favourite news in the future! Let me first set up a few things before we start..."
-            update.message.reply_text(message)
-
             self.db.add_user(telegram_id=telegram_user.id,
                              username=telegram_user.username,
                              firstname=telegram_user.first_name,
@@ -71,8 +67,12 @@ class RobotRss(object):
 
         self.db.update_user(telegram_id=telegram_user.id, is_active=1)
 
-        message = "You will now receive news! Use /help if you need some tips how to tell me what to do!"
+        message = "Welcome " + telegram_user.first_name + "!";
         update.message.reply_text(message)
+        self.help(bot, update)
+
+    def add_initial_feeds(self, telegram_user):
+        pass
 
     def add(self, bot, update, args):
         """
@@ -205,8 +205,15 @@ class RobotRss(object):
         Send a message when the command /help is issued.
         """
 
-        message = "If you need help with handling the commands, please have a look at my <a href='https://github.com/cbrgm/telegram-robot-rss'>Github</a> page. There I have summarized everything necessary for you!"
-        update.message.reply_text(message, parse_mode=ParseMode.HTML)
+        message = ("Commands\n"
+                   "/start\nSubscribe to the bot\n\n"
+                   "/stop\nUnsubscribe from the bot\n\n"
+                   "/add_search <category> <id> <search text>\nSee /categories for a list of all available categories. Search text can be any regexp\n\n"
+                   "/list_searches <category>\nReturns a list of all stored searches for the given category\n\n"
+                   "/remove_search <category> <search id>\nRemoves the specified search. See /list_searches to get the id.\n\n"
+                   "/categories\nReturns a list of all availabled categories.\n\n"
+                   "/help\nSee this help\n\n")
+        update.message.reply_text(message)
 
     def stop(self, bot, update):
         """
@@ -216,7 +223,7 @@ class RobotRss(object):
         telegram_user = update.message.from_user
         self.db.update_user(telegram_id=telegram_user.id, is_active=0)
 
-        message = "Oh.. Okay, I will not send you any more news updates! If you change your mind and you want to receive messages from me again use /start command again!"
+        message = "Goodbye!"
         update.message.reply_text(message)
 
     def about(self, bot, update):
