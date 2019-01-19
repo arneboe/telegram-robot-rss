@@ -234,7 +234,7 @@ class RobotRss(object):
 
         telegram_user = update.message.from_user
 
-        if len(args) != 3:
+        if len(args) < 3:
             message = "To add a filter use \add_filter <feed name> <filter name> <filter string>.\n\n The filter name should be a simple word that you can use to identify and delete the filter\n\n The filter string can be any regex. If the regex matches anywhere in the feed title or text the message will be forwarded."
             update.message.reply_text(message)
             return
@@ -242,6 +242,11 @@ class RobotRss(object):
         url_alias = args[0]
         filter_alias = args[1]
         filter_regexp = args[2]
+        #check if the regexp is multi-word
+        if len(args) > 3:
+            for i in range(3, len(args)):
+                filter_regexp = filter_regexp + " " + args[i]
+
 
         entry = self.db.get_filter(telegram_user, filter_alias, url_alias)
 
