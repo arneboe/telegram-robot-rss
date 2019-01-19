@@ -4,3 +4,4 @@ resources/userdata/*
 *.db
 !resources/sample-credentials.json
 /venv/
+/.idea/
