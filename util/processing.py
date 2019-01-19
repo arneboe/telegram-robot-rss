@@ -75,7 +75,7 @@ class BatchProcess(threading.Thread):
         if post_update_date > url_update_date:
 
             filters = self.db.get_filters(user[0], url[0])
-            send = len(filters) == 0
+            send = len(filters) == 0 # if there are no filters. send everything
             for filter in filters:
                 send |= self.match_filter(post, filter)
 
