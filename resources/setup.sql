@@ -18,5 +18,16 @@ CREATE TABLE web_user (
 	telegram_id integer NOT NULL,
 	alias varchar NOT NULL,
 	FOREIGN KEY(url) REFERENCES web(url),
-	FOREIGN KEY(telegram_id) REFERENCES user(telegram_id)
+	FOREIGN KEY(telegram_id) REFERENCES user(telegram_id),
+	PRIMARY KEY(alias, telegram_id)
+);
+
+CREATE TABLE filter (
+    regexp varchar NOT NULL,
+    alias varchar NOT NULL,
+    url varchar NOT NULL,
+    telegram_id integer NOT NULL,
+    FOREIGN KEY(telegram_id) REFERENCES user(telegram_id),
+    FOREIGN KEY(url) REFERENCES web(url),
+    PRIMARY KEY(alias, url, telegram_id)
 );

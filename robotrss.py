@@ -1,6 +1,6 @@
 # /bin/bash/python
 # encoding: utf-8
-
+from telegram.error import Unauthorized, TelegramError
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 from util.filehandler import FileHandler
@@ -14,7 +14,7 @@ class RobotRss(object):
     def __init__(self, telegram_token, update_interval):
 
         # Initialize bot internals
-        self.db = DatabaseHandler("resources/datastore.db")
+        self.db = DatabaseHandler("resources/db.db")
         self.fh = FileHandler("..")
 
         # Register webhook to telegram bot
@@ -30,6 +30,8 @@ class RobotRss(object):
         self._addCommand(CommandHandler("add", self.add, pass_args=True))
         self._addCommand(CommandHandler("get", self.get, pass_args=True))
         self._addCommand(CommandHandler("remove", self.remove, pass_args=True))
+        self._addCommand(CommandHandler("add_filter", self.add_filter, pass_args=True))
+
 
         # Start the Bot
         self.processing = BatchProcess(
@@ -224,6 +226,35 @@ class RobotRss(object):
 
         message = "Thank you for using <b>RobotRSS</b>! \n\n If you like the bot, please recommend it to others! \n\nDo you have problems, ideas or suggestions about what the bot should be able to do? Then contact my developer <a href='http://cbrgm.de'>@cbrgm</a> or create an issue on <a href='https://github.com/cbrgm/telegram-robot-rss'>Github</a>. There you will also find my source code, if you are interested in how I work!"
         update.message.reply_text(message, parse_mode=ParseMode.HTML)
+
+    def add_filter(self, bot, update, args):
+        '''
+        add a filter to a rss subscription of a user
+        '''
+
+        telegram_user = update.message.from_user
+
+        if len(args) != 3:
+            message = "To add a filter use \add_filter <feed name> <filter name> <filter string>.\n\n The filter name should be a simple word that you can use to identify and delete the filter\n\n The filter string can be any regex. If the regex matches anywhere in the feed title or text the message will be forwarded."
+            update.message.reply_text(message)
+            return
+
+        url_alias = args[0]
+        filter_alias = args[1]
+        filter_regexp = args[2]
+
+        entry = self.db.get_filter(telegram_user, filter_alias, url_alias)
+
+        if entry:
+            update.message.reply_text("Filter already exists")
+        else:
+            self.db.add_filter(telegram_user, filter_alias, filter_regexp, url_alias)
+            update.message.reply_text("New filter added")
+
+
+# test main to figure things out
+#if __name__ == '__main__':
+#    RobotRss(telegram_token="a", update_interval="a")
 
 
 if __name__ == '__main__':

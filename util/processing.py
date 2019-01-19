@@ -1,4 +1,5 @@
 # /bin/bash/python/
+import re
 
 from telegram.error import (TelegramError, Unauthorized)
 from telegram import ParseMode
@@ -72,16 +73,32 @@ class BatchProcess(threading.Thread):
         url_update_date = DateHandler.parse_datetime(datetime=url[1])
 
         if post_update_date > url_update_date:
-            message = "[" + user[7] + "] <a href='" + post.link + \
-                "'>" + post.title + "</a>"
-            try:
-                self.bot.send_message(
-                    chat_id=user[0], text=message, parse_mode=ParseMode.HTML)
-            except Unauthorized:
-                self.db.update_user(telegram_id=user[0], is_active=0)
-            except TelegramError:
-                # handle all other telegram related errors
-                pass
+
+            filters = self.db.get_filters(user[0], url[0])
+            send = len(filters) == 0
+            for filter in filters:
+                send |= self.match_filter(post, filter)
+
+            if send:
+                message = "[" + user[7] + "] <a href='" + post.link + \
+                    "'>" + post.title + "</a>"
+                try:
+                    self.bot.send_message(
+                        chat_id=user[0], text=message, parse_mode=ParseMode.HTML)
+                except Unauthorized:
+                    self.db.update_user(telegram_id=user[0], is_active=0)
+                except TelegramError:
+                    # handle all other telegram related errors
+                    pass
 
     def set_running(self, running):
         self.running = running
+
+    def match_filter(self, post, filter_text):
+        '''
+        :return: True if filter matches, False otherwise
+        '''
+        if re.search(filter_text, post.title, re.IGNORECASE) or re.search(filter_text, post.summary, re.IGNORECASE):
+            return True
+        else:
+            return False

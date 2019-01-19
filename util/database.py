@@ -1,4 +1,6 @@
 import sqlite3
+from itertools import chain
+
 from util.filehandler import FileHandler
 from util.datehandler import DateHandler as dh
 
@@ -244,3 +246,73 @@ class DatabaseHandler(object):
         conn.close()
 
         return result
+
+    def get_url_for_user_from_alias(self, telegram_id, url_alias):
+        '''
+        :return: The url identified by url_alias for the given user or None if it does not exist
+        '''
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+
+        query = "SELECT url FROM web_user WHERE telegram_id = %d AND alias = '%s'" % (telegram_id, url_alias)
+        cursor.execute(query)
+        url = cursor.fetchone()
+        conn.commit()
+        conn.close()
+
+        if url is None:
+            return None
+        else:
+            return url[0]
+
+    def add_filter(self, user, filter_alias, filter_regex, url_alias):
+        url = self.get_url_for_user_from_alias(user.id, url_alias)
+        if not url:
+            raise Exception("no url for filter and alias")
+
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+
+        cursor.execute("INSERT INTO filter VALUES (?,?,?, ?)",
+                       (filter_regex, filter_alias, url, user.id))
+        conn.commit()
+        conn.close()
+
+
+    def get_filters(self, telegram_id, url):
+        '''
+        :return: All filters for the specified url of the given user or None if there are none
+        '''
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+        query = "SELECT regexp FROM filter WHERE filter.url = '%s' AND filter.telegram_id = %d;" % (url, telegram_id)
+        cursor.execute(query)
+        result = cursor.fetchall()
+
+        conn.commit()
+        conn.close()
+
+        if len(result) > 0:
+            #unpack from list of tuples of strings into list of strings
+            return list(chain.from_iterable(result))
+        else:
+            return []
+
+    def get_filter(self, user, filter_alias, url_alias):
+        url = self.get_url_for_user_from_alias(user.id, url_alias)
+        if not url:
+            raise Exception("no url for filter and alias")
+
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+
+        query = "SELECT filter.* FROM filter WHERE filter.alias = '%s' AND filter.url = '%s' AND filter.telegram_id = %d;" % (filter_alias, url, user.id)
+        cursor.execute(query)
+        result = cursor.fetchall()
+
+        conn.commit()
+        conn.close()
+
+
+        return result
+
