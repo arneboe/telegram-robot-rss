@@ -236,7 +236,7 @@ class RobotRss(object):
         telegram_user = update.message.from_user
 
         if len(args) < 3:
-            message = "To add a filter use \add_filter <feed name> <filter name> <filter string>.\n\n The filter name should be a simple word that you can use to identify and delete the filter\n\n The filter string can be any regex. If the regex matches anywhere in the feed title or text the message will be forwarded."
+            message = "/add_filter <feed name> <filter name> <filter string>.\n\n The filter name should be a simple word that you can use to identify and delete the filter\n\n The filter string can be any regex. If the regex matches anywhere in the feed title or text the message will be forwarded."
             update.message.reply_text(message)
             return
 
@@ -255,7 +255,7 @@ class RobotRss(object):
             update.message.reply_text("Filter already exists")
         else:
             self.db.add_filter(telegram_user, filter_alias, filter_regexp, url_alias)
-            update.message.reply_text("New filter added")
+            update.message.reply_text("Added Filter %s to feed %s" % (filter_regexp, url_alias))
 
 
 # test main to figure things out
