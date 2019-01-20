@@ -206,7 +206,14 @@ class RobotRss(object):
         Send a message when the command /help is issued.
         """
 
-        message = "If you need help with handling the commands, please have a look at my <a href='https://github.com/cbrgm/telegram-robot-rss'>Github</a> page. There I have summarized everything necessary for you!"
+        message = ("Commands:\n\n"
+                   "/start\nsubscribe to the bot\n\n"
+                   "/stop\nunsubscribe from the bot\n\n"
+                   "/add <url> <entryname>\n Add new rss subscription\n\n"
+                   "/remove <entryname>\n Remove rss subscription\n\n"
+                   "/list\nShow subscriptions\n\n"
+                   "add_filter <entryname> <filtername> <filter>\n Add a new filter to the specified rss feed.")
+
         update.message.reply_text(message, parse_mode=ParseMode.HTML)
 
     def stop(self, bot, update):
