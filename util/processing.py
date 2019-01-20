@@ -71,16 +71,21 @@ class BatchProcess(threading.Thread):
     def send_newest_messages(self, url, post, user):
         post_update_date = DateHandler.parse_datetime(datetime=post.updated)
         url_update_date = DateHandler.parse_datetime(datetime=url[1])
-
         if post_update_date > url_update_date:
-
+            logging.info("New data in %s for user %d" % (url, user[0]))
             filters = self.db.get_filters(user[0], url[0])
+            logging.info("%d filters apply" % (len(filters)))
             send = len(filters) == 0 # if there are no filters. send everything
+            matching_filter = ""
             for filter in filters:
-                send |= self.match_filter(post, filter)
+                if self.match_filter(post, filter):
+                    logging.info("Filter '%s' matches" % (filter))
+                    matching_filter = filter
+                    send = True
+                    break
 
             if send:
-                message = "[" + user[7] + "] <a href='" + post.link + \
+                message = "['" + matching_filter + "' -- '" + user[7] +"']\n  <a href='" + post.link + \
                     "'>" + post.title + "</a>"
                 try:
                     self.bot.send_message(
