@@ -1,4 +1,5 @@
 # /bin/bash/python/
+import logging
 import re
 
 from telegram.error import (TelegramError, Unauthorized)
@@ -6,7 +7,6 @@ from telegram import ParseMode
 from multiprocessing.dummy import Pool as ThreadPool
 from threading import Thread as RunningThread
 from util.datehandler import DateHandler
-from util.database import DatabaseHandler
 from util.feedhandler import FeedHandler
 import datetime
 import threading
@@ -46,7 +46,7 @@ class BatchProcess(threading.Thread):
 
         time_ended = datetime.datetime.now()
         duration = time_ended - time_started
-        print("Finished updating! Parsed " + str(len(queue)) +
+        logging.info("Finished updating! Parsed " + str(len(queue)) +
               " rss feeds in " + str(duration) + " !")
 
     def update_feed(self, url):
@@ -58,8 +58,8 @@ class BatchProcess(threading.Thread):
                     for post in FeedHandler.parse_feed(url[0]):
                         self.send_newest_messages(
                             url=url, post=post, user=user)
-                except:
-                    traceback.print_exc()
+                except Exception as e:
+                    logging.exception("Error in update feed",exec_info=e)
                     message = "Something went wrong when I tried to parse the URL: \n\n " + \
                         url[0] + "\n\nCould you please check that for me? Remove the url from your subscriptions using the /remove command, it seems like it does not work anymore!"
                     self.bot.send_message(

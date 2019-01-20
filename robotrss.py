@@ -7,6 +7,7 @@ from util.filehandler import FileHandler
 from util.database import DatabaseHandler
 from util.processing import BatchProcess
 from util.feedhandler import FeedHandler
+import logging
 
 
 class RobotRss(object):
@@ -263,6 +264,8 @@ class RobotRss(object):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(filename='log.log', level=logging.INFO)
+    logging.info("Starting RobotRss")
     # Load Credentials
     fh = FileHandler("..")
     credentials = fh.load_json("resources/credentials.json")
