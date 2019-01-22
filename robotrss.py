@@ -81,7 +81,7 @@ class RobotRss(object):
 
         if(self.db.filter_exists(filter_id)):
             self.db.remove_filter(filter_id)
-            update.message.reply_text("Filter '%s' removed" % (filter_id))
+            update.message.reply_text("Filter '%d' removed" % (filter_id))
         else:
             update.message.reply_text("Unknown filter id '%s'" % (filter_id))
 

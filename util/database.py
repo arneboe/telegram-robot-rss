@@ -44,6 +44,20 @@ class DatabaseHandler(object):
         conn.close()
         logging.info("Deleted user %d" % (telegram_id))
 
+    def get_users(self):
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+
+        sql_command = "SELECT * FROM user;"
+
+        cursor.execute(sql_command)
+        result = cursor.fetchall()
+
+        conn.commit()
+        conn.close()
+        return list(itertools.chain(*result))
+
+
     def user_exists(self, telegram_id):
         conn = sqlite3.connect(self.database_path)
         cursor = conn.cursor()
@@ -67,6 +81,15 @@ class DatabaseHandler(object):
 
         cursor.execute("INSERT OR IGNORE INTO feed (url, last_updated) VALUES (?,?)",
                        (url, dh.get_datetime_now()))
+
+        conn.commit()
+        conn.close()
+
+    def update_feed_date(self, url, new_date):
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+        query = "UPDATE feed set last_updated='%s' WHERE url='%s'" % (new_date, url)
+        cursor.execute(query)
 
         conn.commit()
         conn.close()
@@ -137,6 +160,20 @@ class DatabaseHandler(object):
         conn.commit()
         conn.close()
         return result
+
+    def get_filters_for_user_and_url(self, telegram_id, url):
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+
+        sql_command = "SELECT regexp FROM filter WHERE telegram_id=%d AND url='%s';" % (telegram_id, url)
+
+        cursor.execute(sql_command)
+        result = cursor.fetchall()
+
+        conn.commit()
+        conn.close()
+        return list(itertools.chain(*result))
+
 
     def filter_exists(self, filter_id):
         conn = sqlite3.connect(self.database_path)

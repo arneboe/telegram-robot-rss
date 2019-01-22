@@ -50,55 +50,46 @@ class BatchProcess(threading.Thread):
               " rss feeds in " + str(duration) + " !")
 
     def update_feed(self, url):
-        return
-        telegram_users = self.db.get_users_for_url(url=url[0])
+        telegram_users = self.db.get_users()
+        posts = FeedHandler.parse_feed(url[0])
 
         for user in telegram_users:
-            if user[6]:  # is_active
-                try:
-                    for post in FeedHandler.parse_feed(url[0]):
-                        self.send_newest_messages(
-                            url=url, post=post, user=user)
-                except Exception as e:
-                    logging.exception("Error in update feed",exec_info=e)
-                    message = "Something went wrong when I tried to parse the URL: \n\n " + \
-                        url[0] + "\n\nCould you please check that for me? Remove the url from your subscriptions using the /remove command, it seems like it does not work anymore!"
-                    self.bot.send_message(
-                        chat_id=user[0], text=message, parse_mode=ParseMode.HTML)
+            filters = self.db.get_filters_for_user_and_url(user, url[0])
 
-        self.db.update_url(url=url[0], last_updated=str(
-            DateHandler.get_datetime_now()))
+            for post in posts:
+                if self.match_filters(post, filters):
+                    try:
+                        self.send_newest_messages(url=url, post=post, user=user)
+                    except Exception as e:
+                        logging.exception("Error in update feed",exec_info=e)
+                        message = "Something went wrong when I tried to parse the URL: \n\n " + \
+                         url[0] + "\n\nCould you please check that for me? Remove the url from your subscriptions using the /remove command, it seems like it does not work anymore!"
+
+        self.db.update_feed_date(url=url[0], new_date=str(DateHandler.get_datetime_now()))
 
     def send_newest_messages(self, url, post, user):
         post_update_date = DateHandler.parse_datetime(datetime=post.updated)
         url_update_date = DateHandler.parse_datetime(datetime=url[1])
         if post_update_date > url_update_date:
-            logging.info("New data in %s for user %d" % (url, user[0]))
-            filters = self.db.get_filters(user[0], url[0])
-            logging.info("%d filters apply" % (len(filters)))
-            send = len(filters) == 0 # if there are no filters. send everything
-            matching_filter = ""
-            for filter in filters:
-                if self.match_filter(post, filter):
-                    logging.info("Filter '%s' matches" % (filter))
-                    matching_filter = filter
-                    send = True
-                    break
-
-            if send:
-                message = "['" + matching_filter + "' -- '" + user[7] +"']\n  <a href='" + post.link + \
-                    "'>" + post.title + "</a>"
-                try:
-                    self.bot.send_message(
-                        chat_id=user[0], text=message, parse_mode=ParseMode.HTML)
-                except Unauthorized:
-                    self.db.update_user(telegram_id=user[0], is_active=0)
-                except TelegramError:
-                    # handle all other telegram related errors
-                    pass
+            logging.info("New data in %s for user %d" % (url[0], user))
+            message = "<a href='" + post.link + "'>" + post.title + "</a>"
+            try:
+                self.bot.send_message(
+                    chat_id=user, text=message, parse_mode=ParseMode.HTML)
+            except Unauthorized as e:
+                logging.exception("unathorized", exec_info=e)
+            except TelegramError as e:
+                logging.exception("Telegram error", exec_info=e)
 
     def set_running(self, running):
         self.running = running
+
+    def match_filters(self, post, filters):
+        for filter in filters:
+            result = self.match_filter(post, filter)
+            if result:
+                return True
+        return False
 
     def match_filter(self, post, filter_text):
         '''
