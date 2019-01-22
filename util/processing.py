@@ -50,6 +50,7 @@ class BatchProcess(threading.Thread):
               " rss feeds in " + str(duration) + " !")
 
     def update_feed(self, url):
+        return
         telegram_users = self.db.get_users_for_url(url=url[0])
 
         for user in telegram_users:
