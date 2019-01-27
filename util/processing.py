@@ -46,8 +46,7 @@ class BatchProcess(threading.Thread):
 
         time_ended = datetime.datetime.now()
         duration = time_ended - time_started
-        logging.info("Finished updating! Parsed " + str(len(queue)) +
-              " rss feeds in " + str(duration) + " !")
+        logging.info("Finished updating!")
 
     def update_feed(self, url):
         telegram_users = self.db.get_users()
@@ -57,9 +56,10 @@ class BatchProcess(threading.Thread):
             filters = self.db.get_filters_for_user_and_url(user, url[0])
 
             for post in posts:
-                if self.match_filters(post, filters):
+                match = self.match_filters(post, filters)
+                if match:
                     try:
-                        self.send_newest_messages(url=url, post=post, user=user)
+                        self.send_newest_messages(url=url, post=post, user=user, match=match)
                     except Exception as e:
                         logging.exception("Error in update feed",exec_info=e)
                         message = "Something went wrong when I tried to parse the URL: \n\n " + \
@@ -67,12 +67,12 @@ class BatchProcess(threading.Thread):
 
         self.db.update_feed_date(url=url[0], new_date=str(DateHandler.get_datetime_now()))
 
-    def send_newest_messages(self, url, post, user):
+    def send_newest_messages(self, url, post, user, match):
         post_update_date = DateHandler.parse_datetime(datetime=post.updated)
         url_update_date = DateHandler.parse_datetime(datetime=url[1])
         if post_update_date > url_update_date:
             logging.info("New data in %s for user %d" % (url[0], user))
-            message = "<a href='" + post.link + "'>" + post.title + "</a>"
+            message = "Found <b>" + match[0] + "</b> in " + match[1] + " of: \n" "<a href='" + post.link + "'>" + post.title + "</a>"
             try:
                 self.bot.send_message(
                     chat_id=user, text=message, parse_mode=ParseMode.HTML)
@@ -85,17 +85,19 @@ class BatchProcess(threading.Thread):
         self.running = running
 
     def match_filters(self, post, filters):
+        '''
+        :return: (filter_text, title|summary) or empty tuple
+        '''
         for filter in filters:
-            result = self.match_filter(post, filter)
-            if result:
-                return True
-        return False
+            title_match = re.search(filter, post.title, re.IGNORECASE)
+            text_match = re.search(filter, post.summary, re.IGNORECASE)
+            if title_match:
+                logging.info("'%s' match in title: '%s'" % (filter, post.title))
+                return (filter, "title")
 
-    def match_filter(self, post, filter_text):
-        '''
-        :return: True if filter matches, False otherwise
-        '''
-        if re.search(filter_text, post.title, re.IGNORECASE) or re.search(filter_text, post.summary, re.IGNORECASE):
-            return True
-        else:
-            return False
+            elif text_match:
+                logging.info("'%s' match in summary: '%s'" % (filter, post.summary))
+                return (filter, "summary")
+
+        return ()
+
