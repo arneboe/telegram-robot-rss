@@ -51,27 +51,28 @@ class BatchProcess(threading.Thread):
     def update_feed(self, url):
         telegram_users = self.db.get_users()
         posts = FeedHandler.parse_feed(url[0])
+        url_update_date = DateHandler.parse_datetime(datetime=url[1])
 
         for user in telegram_users:
             filters = self.db.get_filters_for_user_and_url(user, url[0])
 
             for post in posts:
-                match = self.match_filters(post, filters)
-                if match:
-                    try:
-                        self.send_newest_messages(url=url, post=post, user=user, match=match)
-                    except Exception as e:
-                        logging.exception("Error in update feed",exec_info=e)
-                        message = "Something went wrong when I tried to parse the URL: \n\n " + \
-                         url[0] + "\n\nCould you please check that for me? Remove the url from your subscriptions using the /remove command, it seems like it does not work anymore!"
+                post_update_date = DateHandler.parse_datetime(datetime=post.updated)
+                if post_update_date > url_update_date:
+                    match = self.match_filters(post, filters)
+                    if match:
+                        try:
+                            self.send_message(url=url, post=post, user=user, match=match)
+                        except Exception as e:
+                            logging.exception("Error in update feed",exec_info=e)
+                            message = "Something went wrong when I tried to parse the URL: \n\n " + \
+                                      url[0] + "\n\nCould you please check that for me? Remove the url from your subscriptions using the /remove command, it seems like it does not work anymore!"
 
         self.db.update_feed_date(url=url[0], new_date=str(DateHandler.get_datetime_now()))
 
-    def send_newest_messages(self, url, post, user, match):
-        post_update_date = DateHandler.parse_datetime(datetime=post.updated)
-        url_update_date = DateHandler.parse_datetime(datetime=url[1])
-        if post_update_date > url_update_date:
+    def send_message(self, url, post, user, match):
             logging.info("New data in %s for user %d" % (url[0], user))
+
             message = "Found <b>" + match[0] + "</b> in " + match[1] + " of: \n" "<a href='" + post.link + "'>" + post.title + "</a>"
             try:
                 self.bot.send_message(
