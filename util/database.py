@@ -174,6 +174,19 @@ class DatabaseHandler(object):
         conn.close()
         return list(itertools.chain(*result))
 
+    def get_user_for_filter(self, filter_id):
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT telegram_id FROM filter WHERE filter_id = " + str(filter_id))
+        result = cursor.fetchone()
+        conn.commit()
+        conn.close()
+
+        if result:
+            return result[0]
+        return -1
+
 
     def filter_exists(self, filter_id):
         conn = sqlite3.connect(self.database_path)
@@ -195,6 +208,6 @@ class DatabaseHandler(object):
         cursor.execute("DELETE FROM filter WHERE filter_id = " + str(filter_id))
         conn.commit()
         conn.close()
-        logging.info("Removed Filter %d" % (filter_id))
+        logging.info("Removed Filter " + str(filter_id))
 
 

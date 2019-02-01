@@ -78,12 +78,16 @@ class RobotRss(object):
             update.message.reply_text("Illegal filter id '%s'" % (filter_id))
             return
 
-
         if(self.db.filter_exists(filter_id)):
+            filter_owner = self.db.get_user_for_filter(filter_id)
+            if filter_owner != telegram_id:
+                update.message.reply_text("Not allowed. You did not create this filter!")
+                return
+
             self.db.remove_filter(filter_id)
-            update.message.reply_text("Filter '%d' removed" % (filter_id))
+            update.message.reply_text("Filter removed")
         else:
-            update.message.reply_text("Unknown filter id '%s'" % (filter_id))
+            update.message.reply_text("Unknown filter id")
 
 
     def list(self, bot, update):
