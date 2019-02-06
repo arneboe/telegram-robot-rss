@@ -54,7 +54,10 @@ class BatchProcess(threading.Thread):
         url_update_date = DateHandler.parse_datetime(datetime=url[1])
 
         for user in telegram_users:
-            filters = self.db.get_filters_for_user_and_url(user, url[0])
+            if user["muted"]:
+                continue
+            user_id = user["telegram_id"]
+            filters = self.db.get_filters_for_user_and_url(user_id, url[0])
 
             for post in posts:
                 post_update_date = DateHandler.parse_datetime(datetime=post.updated)
@@ -62,7 +65,7 @@ class BatchProcess(threading.Thread):
                     match = self.match_filters(post, filters)
                     if match:
                         try:
-                            self.send_message(url=url, post=post, user=user, match=match)
+                            self.send_message(url=url, post=post, user=user_id, match=match)
                         except Exception as e:
                             logging.exception("Error in update feed",exec_info=e)
                             message = "Something went wrong when I tried to parse the URL: \n\n " + \

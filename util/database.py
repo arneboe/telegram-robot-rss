@@ -46,16 +46,47 @@ class DatabaseHandler(object):
 
     def get_users(self):
         conn = sqlite3.connect(self.database_path)
+        conn.row_factory = self.dict_factory
         cursor = conn.cursor()
 
         sql_command = "SELECT * FROM user;"
 
         cursor.execute(sql_command)
         result = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return result
+
+
+    def set_user_muted(self, telegram_id, muted):
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+
+        muted_int = 0
+        if muted:
+            muted_int = 1
+
+        query = "UPDATE user set muted=" + str(muted_int) + " WHERE telegram_id = " + str(telegram_id) + ";"
+        cursor.execute(query)
 
         conn.commit()
         conn.close()
-        return list(itertools.chain(*result))
+
+
+    def get_user(self, telegram_id):
+        conn = sqlite3.connect(self.database_path)
+        conn.row_factory = self.dict_factory
+        cursor = conn.cursor()
+
+        sql_command = "SELECT * FROM user WHERE telegram_id = " + str(telegram_id) + ";"
+
+        cursor.execute(sql_command)
+        result = cursor.fetchone()
+
+        conn.commit()
+        conn.close()
+
+        return result
 
 
     def user_exists(self, telegram_id):
@@ -210,4 +241,11 @@ class DatabaseHandler(object):
         conn.close()
         logging.info("Removed Filter " + str(filter_id))
 
+    #see https://stackoverflow.com/questions/3300464/how-can-i-get-dict-from-sqlite-query
+    #I do not use sqlite3.Row because i dont want any sqlite dependency to leave this class
+    def dict_factory(self, cursor, row):
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
 

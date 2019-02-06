@@ -3,8 +3,10 @@ CREATE TABLE feed (
 	last_updated timestamp
 );
 
-CREATE TABLE user (
-	telegram_id integer PRIMARY KEY NOT NULL UNIQUE
+CREATE TABLE `user` (
+	telegram_id	integer NOT NULL UNIQUE,
+	muted integer NOT NULL DEFAULT 0,
+	PRIMARY KEY(telegram_id)
 );
 
 CREATE TABLE filter (

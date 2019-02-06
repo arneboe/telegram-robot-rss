@@ -18,6 +18,7 @@ class RobotRss(object):
         self.db = DatabaseHandler("resources/db.db")
         self.fh = FileHandler("..")
 
+
         # Register webhook to telegram bot
         self.updater = Updater(telegram_token)
         self.dispatcher = self.updater.dispatcher
@@ -29,6 +30,9 @@ class RobotRss(object):
         self._addCommand(CommandHandler("list", self.list))
         self._addCommand(CommandHandler("add", self.add, pass_args=True))
         self._addCommand(CommandHandler("remove", self.remove, pass_args=True))
+        self._addCommand(CommandHandler("mute", self.mute))
+        self._addCommand(CommandHandler("unmute", self.unmute))
+
 
         # Start the Bot
         self.processing = BatchProcess(
@@ -90,6 +94,8 @@ class RobotRss(object):
             update.message.reply_text("Unknown filter id")
 
 
+
+
     def list(self, bot, update):
         telegram_id = update.message.from_user.id
 
@@ -108,7 +114,9 @@ class RobotRss(object):
                    "/stop\nunsubscribe from the bot\n\n"
                    "/add <search term>\n Add a new search term\n\n"
                    "/remove <id>\n Remove search term. Use /list to get the id \n\n"
-                   "/list\nShow current search terms")
+                   "/list\nShow current search terms\n\n"
+                   "/mute\nMutes the bot\n\n"
+                   "/unmute\nUnmutes the bot")
 
         update.message.reply_text(message)
 
@@ -119,6 +127,32 @@ class RobotRss(object):
         self.db.remove_user(update.message.from_user.id)
         message = "Bye!"
         update.message.reply_text(message)
+
+    def mute(self, bot, update):
+        telegram_id = update.message.from_user.id
+        user = self.db.get_user(telegram_id)
+
+        if user["muted"]:
+            message = "The bot is already muted!"
+            update.message.reply_text(message)
+        else:
+            self.db.set_user_muted(telegram_id, True)
+            message = "Muted. You will no longer receive messages."
+            update.message.reply_text(message)
+
+    def unmute(self, bot, update):
+        telegram_id = update.message.from_user.id
+        user = self.db.get_user(telegram_id)
+
+        if user["muted"]:
+            self.db.set_user_muted(telegram_id, False)
+            message = "Unmuted! You will receive updates again."
+            update.message.reply_text(message)
+        else:
+            message = "The bot is already unmuted!"
+            update.message.reply_text(message)
+
+
 
     def add(self, bot, update, args):
         '''
