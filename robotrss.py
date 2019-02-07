@@ -180,7 +180,11 @@ class RobotRss(object):
         update.message.reply_text("Added Filter '%s'" % (filter_regexp))
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='log.log', level=logging.INFO)
+    logging.basicConfig(filename='log.log', level=logging.INFO,
+                        format='%(asctime)s %(levelname)-8s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+
+
     logging.info("Starting RobotRss")
     # Load Credentials
     fh = FileHandler("..")
