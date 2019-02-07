@@ -58,6 +58,8 @@ class BatchProcess(threading.Thread):
                 continue
             user_id = user["telegram_id"]
             filters = self.db.get_filters_for_user_and_url(user_id, url[0])
+            if len(filters) == 0:
+                continue
 
             for post in posts:
                 post_update_date = DateHandler.parse_datetime(datetime=post.updated)
